@@ -1,0 +1,15 @@
+{
+  "name": "es6-hapi-demo",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node --harmony index.js"
+  },
+  "author": "avbel",
+  "license": "MIT",
+  "dependencies": {
+    "co": "^3.0.6",
+    "hapi": "^6.0.2"
+  }
+}
