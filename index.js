@@ -1,10 +1,6 @@
-/*
-port 8000
-/item/<number>
-*/
 "use strict";
 
-let Hapi = require("hapi");
+let Hapi = require("co-hapi");
 let co = require("co");
 
 
@@ -24,61 +20,37 @@ function getItemDetails(id, cb){
 }
 
 
-//Server code
+co(function*(){
+  //Server code
+  let server = Hapi.createServer(3000);
 
-let server = Hapi.createServer(3000);
 
-
-//Add  support of using generators as route handlers (TODO move to plugin)
-server.ext("onPreHandler", function(request, next){
-  let handler = request.route.handler;
-  if(handler.coPowered){
-    return next();
-  }
-  request.route.handler = function(req, reply){
-    let res = handler.apply(this, arguments);
-    if(res && (typeof res.next === "function" || typeof res.then === "function" || typeof res === "function")){
-      co(res)(function(err, result){
-        if(err){
-          return reply(Hapi.error(err.message || err));
-        }
-        if(result){
-          return reply(result);
-        }
-      });
+  server.route({
+    method: "GET",
+    path: "/item/{id}",
+    handler: function *(request) { //using generator as handler
+      let item = yield getItem.bind(null, request.params.id);
+      item.details = yield getItemDetails.bind(null, request.params.id);
+      return item;
     }
-  };
-  request.route.handler.coPowered = true
-  next();
-});
+  });
 
 
-
-server.route({
-  method: "GET",
-  path: "/item/{id}",
-  handler: function *(request, reply) { //using generator as handler
-    let item = yield getItem.bind(null, request.params.id);
-    item.details = yield getItemDetails.bind(null, request.params.id);
-    reply(item);
-  }
-});
-
-
-server.handler("test", function (route, options) { //named handler with generator
-  return function* (request, reply) {
-    let item = yield getItem.bind(null, 1);
-    reply(options);
-  }
-});
-
-server.route({
+  server.handler("test", function (route, options) { //named handler with generator
+    return function* (request, reply) {
+      let item = yield getItem.bind(null, 1);
+      reply(options); // or 'return options'
+    }
+  });
+  server.route({
     method: "GET",
     path: "/test",
     handler: { test: { msg: "test" } } //using of named handler
+  });
+  yield server.start();
+})(function(err){
+  if(err){
+    console.error(err);
+  }
 });
-
-
-
-server.start();
 
