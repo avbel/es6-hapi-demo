@@ -24,7 +24,6 @@ co(function*(){
   //Server code
   let server = Hapi.createServer(3000);
 
-
   server.route({
     method: "GET",
     path: "/item/{id}",
@@ -47,6 +46,7 @@ co(function*(){
     path: "/test",
     handler: { test: { msg: "test" } } //using of named handler
   });
+  yield server.pack.register([require("./plugin2"), require("./plugin1")]);
   yield server.start();
 })(function(err){
   if(err){
